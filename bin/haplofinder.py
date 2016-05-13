@@ -3,7 +3,7 @@
 #
 # Haplofinder
 #
-# Copyright (c) 2001, Roslin Institute and Andy Law
+# Copyright (c) 2001, 2016, Roslin Institute and Andy Law
 #
 #     This program is free software; you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
@@ -21,8 +21,8 @@
 #
 #
 # If you have problems or questions, then send an email to 
-# Roslin.Bioinformatics@bbsrc.ac.uk, or write to Roslin Bioinformatics Group,
-# Roslin Institute, Roslin, Midlothian, EH26 0RX, Scotland, UK.
+# Roslin.Bioinformatics@roslin.ed.ac.uk, or write to Roslin Bioinformatics Group,
+# Roslin Institute, Roslin, Midlothian, EH25 9RG, Scotland, UK.
 #
 #
 # Details
@@ -54,6 +54,13 @@
 # 2003-10-01
 #
 # Changed regex references to re objects as regex is deprecated in Python 2.2
+#
+# Version 1.2
+#
+# Andy Law
+# 2016-05-13
+#
+# Updated contact details.
 #
 
 import getopt
@@ -512,7 +519,7 @@ class HaploFinder:
 
 	def startDetails( self):
 		print ""
-		print "Haplofinder version 1.1, Copyright (C) 2001 Roslin Institute, Andy Law"
+		print "Haplofinder version 1.2, Copyright (C) 2001,2016 Roslin Institute, Andy Law"
 		print "Haplofinder comes with ABSOLUTELY NO WARRANTY; for details type"
 		print "'" + sys.argv[0] + " -w'.  This is free software, and you are"
 		print "welcome to redistribute it under certain conditions; type"
