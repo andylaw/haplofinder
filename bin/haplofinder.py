@@ -17,12 +17,21 @@
 # 
 #     You should have received a copy of the GNU General Public License
 #     along with this program; if not, write to the Free Software
-#     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 #
 #
-# If you have problems or questions, then send an email to 
-# Roslin.Bioinformatics@roslin.ed.ac.uk, or write to Roslin Bioinformatics Group,
-# Roslin Institute, Roslin, Midlothian, EH25 9RG, Scotland, UK.
+# If you have problems or questions, then send an email to:
+#   Roslin.Bioinformatics@roslin.ed.ac.uk
+#
+# or write to:
+#
+# Roslin Bioinformatics Group,
+# The Roslin Institute,
+# The University of Edinburgh,
+# Easter Bush,
+# Midlothian,
+# EH25 9RG,
+# Scotland, UK.
 #
 #
 # Details
@@ -61,6 +70,7 @@
 # 2016-05-13
 #
 # Updated contact details.
+# Reformatted to conform with PEP8
 #
 
 import copy
@@ -73,36 +83,38 @@ import sys
 MAX_CLIP_START = 20
 
 
-# --------------------------------------------------------------------------------
-#
-# FASTA_File
-#
-# A file of FASTA-Formatted sequences. Can be read or written.
-#
-# Constructor just creates an object with a set of empty structures
+# ----------------------------------------------------------------------------
 
 class FastaFile:
-    # ----------------
-    # In the constructor, we initialise the sequenceArray and indices and store the
-    # filename
+    """
+    A file of FASTA-Formatted sequences. Can be read or written.
+    """
 
     def __init__(self, filename):
+        """
+        Initialise the sequence list and associated index and store the
+        filename for later use
+
+        :param filename: The file to be read from or written to
+        :return:
+        """
 
         self._sequence_array = []
         self._next_sequence_index = 0
         self._filename = filename
 
     # ----------------
-    # In the read_file routine, we open the file (which we assume to be an aligned FASTA-
-    # format file and read in each sequence in turn. We check the lengths of the
-    # sequences and also keep track of the first and last fully-identified (i.e.
-    # not leading or trailing '-') base
+    # In the read_file routine, we open the file (which we assume to be an
+    # aligned FASTA-format file and read in each sequence in turn. We check
+    # the lengths of the sequences and also keep track of the first and last
+    # fully-identified (i.e. not leading or trailing '-') base
 
     def read_file(self):
 
-        # Try to open the file. If we can open it, read the whole thing in in one
-        # go. Split the file on \r then rejoin using \n , then split on \n\n and rejoin
-        # using \n so that we get all lines delimited with a single newline character
+        # Try to open the file. If we can open it, read the whole thing in in
+        # one go. Split the file on \r then rejoin using \n, then split on
+        # \n\n and rejoin using \n so that we get all lines delimited with a
+        # single newline character
 
         input_file = open(self._filename, 'r')
         if input_file:
@@ -110,17 +122,20 @@ class FastaFile:
             string.joinfields(string.splitfields(file_contents, "\r"), "\n")
             string.joinfields(string.splitfields(file_contents, "\n\n"), "\n")
 
-            # Split the file on '>' and throw away the first record (the blank space before
-            # the first '>'). We now have an array of sequence records
+            # Split the file on '>' and throw away the first record (the blank
+            # space before the first '>'). We now have an array of sequence
+            # records
             records = (string.splitfields(file_contents, ">"))[1:]
 
-            # Create a regular expression object to look for quoted names in the file
+            # Create a regular expression object to look for quoted names in
+            # the file
             my_regex = re.compile("^\s*\"([^\"]+)\"")
 
-            # For each sequence in turn, split the record into lines (on '\n'), and split
-            # the first line, keeping the first entry as the title. Then join all the other
-            # lines back up as the sequence element. Create a new sequence object using these
-            # details and stick it in the list of known sequences
+            # For each sequence in turn, split the record into lines (on '\n'),
+            # and split the first line, keeping the first entry as the title.
+            # Then join all the other lines back up as the sequence element.
+            # Create a new sequence object using these details and stick it in
+            # the list of known sequences
 
             for this_record in records:
                 lines = string.splitfields(this_record, "\n")
@@ -144,9 +159,8 @@ class FastaFile:
             sys.exit(1)
 
             # ----------------
-            #
-            # Return the next unread sequence from the list read in by the read_file routine
-            #
+            # Return the next unread sequence from the list read in by the
+            # read_file routine
 
     def get_next_sequence(self):
 
@@ -158,18 +172,15 @@ class FastaFile:
             return next_seq
 
             # ----------------
-            #
-            # Add a new sequence to the list of sequences. Sequence is assumed to be a sequence
-            # object
-            #
+            # Add a new sequence to the list of sequences. Sequence is assumed
+            # to be a sequence object
 
     def add_sequence(self, sequence):
         self._sequence_array.append(sequence)
 
     # ----------------
-    #
     # Write the contents of the sequence array out to the file
-    #
+
     def write_file(self):
         output_file = open(self._filename, 'w')
         if output_file:
@@ -179,14 +190,27 @@ class FastaFile:
             output_file.close()
 
 
-# --------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 class HaplotypeDetector:
-    #
-    # Constructor
-    #
+    """
+    A HaplotypeDetector manages the reference haplotypes file and search it
+    for matches against sequences supplied
+    """
 
     def __init__(self, filename, offset):
+        """
+        Construct a new HaplotypeDetector. First check for a pre-computed
+        haplotypes file that has a date stamp later than the plain reference
+        haplotypes file. If one exists then use that file instead, otherwise
+        compute the pairs from the original list and save them for future use.
+
+        :param filename: The name of the file that contains the reference
+        haplotypes
+        :param offset: The offset to apply when comparing the test sequences
+        against the reference
+        :return:
+        """
 
         # Initialise the storage structures and store the filename
 
@@ -197,8 +221,6 @@ class HaplotypeDetector:
         self._filename = filename
 
         # Look for a pre-computed file of haplotypes (filename + ".haplos")
-        # If one exists, and has been modified later then the input filename then
-        # use that one
 
         using_haplo_file = 0
 
@@ -207,11 +229,13 @@ class HaplotypeDetector:
             haplotype_file_stat = os.stat(self._filename + ".haplos")[8]
             if haplotype_file_stat > real_file_stat:
                 self._filename += ".haplos"
-                print "Reading pre-computed haplotype combinations from '" + self._filename + "'"
+                print "Reading pre-computed haplotype combinations from '" +\
+                      self._filename + "'"
                 using_haplo_file = 1
 
-                # Read the fasta file and get each sequence in turn. Store them in the Haplotype Array
-                # and hash, having stripped off any leading stuff if required
+                # Read the fasta file and get each sequence in turn. Store them
+                # in the Haplotype list and dictionary, having stripped off any
+                # leading stuff if required
 
         fasta_file = FastaFile(self._filename)
         if fasta_file:
@@ -234,26 +258,33 @@ class HaplotypeDetector:
             sys.exit(1)
 
         if not using_haplo_file:
-            print "There are " + str(len(self._haplotype_list)) + " original sequences"
+            print "There are " + str(
+                len(self._haplotype_list)) + " original sequences"
             self.build_combinations()
         else:
             self._combination_list = self._haplotype_list
 
-        print "Length of a sequence is " + str(len(self._combination_list[0].sequence))
+        print "Length of a sequence is " + str(
+            len(self._combination_list[0].sequence))
         print "There are " + str(len(self._combination_list)) + " combinations"
 
-    # --------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     #
-    # Build a set of sequence combinations from the original set of sequences
-    # using just the portion of sequence specified by the start and length parameters
 
     def build_combinations(self):
+        """
+        Build a set of sequence combinations from the original set of sequences
+        using just the portion of sequence specified by the start and length
+        parameters
+
+        :return:
+        """
         print "Building combinations of known haplotypes"
         self._combination_list = self._haplotype_list
         original_count = len(self._combination_list)
 
-        # Once we have all the sequences, add them to each other to give the possible
-        # combinations. Add them to the Array as well.
+        # Once we have all the sequences, add them to each other to give the
+        # possible combinations. Add them to the list as well.
 
         for i in range(0, original_count - 1):
             for j in range(i + 1, original_count):
@@ -262,14 +293,15 @@ class HaplotypeDetector:
                 sys.stdout.write(".")
                 sys.stdout.flush()
         print
-        print "We have " + str(len(self._combination_list)) + " combinations to compare"
+        print "We have " + str(
+            len(self._combination_list)) + " combinations to compare"
         fasta_file = FastaFile(self._filename + ".haplos")
 
         for each_seq in self._combination_list:
             fasta_file.add_sequence(each_seq)
         fasta_file.write_file()
 
-    # --------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
     #
 
     def find_match(self, sequence):
@@ -277,7 +309,8 @@ class HaplotypeDetector:
         print
         print "Analysing '" + sequence.title + "'"
         print "Start of sequence is  '" + sequence.sequence[:20] + "'"
-        print "Start of reference is '" + self._haplotype_list[0].sequence[:20] + "'"
+        print "Start of reference is '" + self._haplotype_list[0].sequence[
+                                          :20] + "'"
 
         got_match = 0
         clip_start = 0
@@ -293,10 +326,11 @@ class HaplotypeDetector:
             clipped = "(clipping %d bases from the start)" % clip_start
 
         if not got_match:
-            print "Nothing matched! (even after clipping %d bases from the start" % MAX_CLIP_START
+            print "Nothing matched! (even after clipping %d bases from the " \
+                  "start" % MAX_CLIP_START
 
 
-# --------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 class IUPAC:
     def __init__(self):
@@ -348,11 +382,11 @@ class IUPAC:
             return self.list_by_score[self.get_bit_score(base_list)]
 
 
-# --------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 class Sequence:
-    # Class-based IUPAC object. This is just used as a translator so we don't need separate instances
-    # for each Sequence object.
+    # Class-based IUPAC object. This is just used as a translator so we don't
+    # need separate instances for each Sequence object.
     classIUPAC = IUPAC()
 
     def __init__(self, title, sequence):
@@ -366,7 +400,8 @@ class Sequence:
 
         newseq = ''
         for i in range(0, len(self.sequence)):
-            newseq = newseq + self.classIUPAC.get_merged_code([self.sequence[i:i + 1], other.sequence[i:i + 1]])
+            newseq = newseq + self.classIUPAC.get_merged_code(
+                [self.sequence[i:i + 1], other.sequence[i:i + 1]])
 
         sequence_object = Sequence(self.title + " + " + other.title, newseq)
         sequence_object.add_parents([self, other])
@@ -407,17 +442,18 @@ class HaploFinder:
         # Get the command line arguments
         #
         try:
-            optlist, self.remains = getopt.getopt(sys.argv[1:], 'a:o:cw', ['alignfile=', 'offset='])
+            optlist, self.remains = getopt.getopt(sys.argv[1:], 'a:o:cw',
+                                                  ['alignfile=', 'offset='])
         except getopt.GetoptError as err:
-            print "There was a problem with the command line arguments - exiting"
+            print "There was a problem with the command line arguments - " \
+                  "exiting"
             print str(err)
             sys.exit(1)
 
         #
         # Decode them so short arguments are converted to long arguments
         #
-        short_to_long = {'a': "alignfile",
-                         'o': "offset"}
+        short_to_long = {'a': "alignfile", 'o': "offset"}
         self.options = {}
 
         for arg in optlist:
@@ -431,8 +467,8 @@ class HaploFinder:
                 flag = short_to_long[flag]
 
             if flag in self.options:
-                error_string = "Too many instances of the '" + flag + "' argument"
-                raise Exception(error_string)
+                err = "Too many instances of the '%s' argument" % flag
+                raise Exception(err)
 
             self.options[flag] = value
 
@@ -441,14 +477,14 @@ class HaploFinder:
 
         self.options["offset"] = int(self.options["offset"])
 
-        exit_needed = 0
+        exit_needed = False
         if 'c' in self.options:
             HaploFinder.copyright()
-            exit_needed = 1
+            exit_needed = True
         if 'w' in self.options:
             HaploFinder.warranty()
-            exit_needed = 1
-        if exit_needed == 1:
+            exit_needed = True
+        if exit_needed is True:
             sys.exit(0)
 
         # flag the conditions and report any other requested information
@@ -458,28 +494,30 @@ class HaploFinder:
 
     @staticmethod
     def help():
-        print "Usage: " + sys.argv[0] + " -a|--alignfile <alignmentfile>"
-        print "            [-o|-offset <offset>] file1 [file2 ...]"
-        print ""
-        print "        Where <alignmentfile> is a padded alignment in FASTA file"
-        print "                    format"
-        print ""
-        print "              <offset> is the offset of the sequences in the files to be"
-        print "                    analysed, compared against the alignment. Positive"
-        print "                    offsets mean the sequence starts within the alignment,"
-        print "                    negative offsets (enclosed in quotes) mean the"
-        print "                    sequence starts before the sequence in the alignment"
-        print "                    file"
-        print ""
-        print "              file1 [file2 ...] are the names of FASTA formatted"
-        print "                    sequence files to be analysed"
+        print ("""\
+ Usage: %s -a|--alignfile <alignmentfile>
+             [-o|-offset <offset>] file1 [file2 ...]
+
+        Where <alignmentfile> is a padded alignment in FASTA file
+                    format
+
+            <offset> is the offset of the sequences in the files to be
+                     analysed, compared against the alignment. Positive
+                     offsets mean the sequence starts within the alignment,
+                     negative offsets (enclosed in quotes) mean the sequence
+                     starts before the sequence in the alignment file
+
+               file1 [file2 ...] are the names of FASTA formatted
+                     sequence files to be analysed
+""" % (sys.argv[0]))
         sys.exit(0)
 
     def run(self):
 
         # Build the haplotype detector by reading in the file
 
-        hd = HaplotypeDetector(self.options['alignfile'], self.options['offset'])
+        hd = HaplotypeDetector(self.options['alignfile'],
+                               self.options['offset'])
 
         for input_file in self.remains:
             fasta_file = FastaFile(input_file)
@@ -495,70 +533,79 @@ class HaploFinder:
 
     @staticmethod
     def start_details():
-        print ""
-        print "Haplofinder version 1.2, Copyright (C) 2001,2016 Roslin Institute, Andy Law"
-        print "Haplofinder comes with ABSOLUTELY NO WARRANTY; for details type"
-        print "'" + sys.argv[0] + " -w'.  This is free software, and you are"
-        print "welcome to redistribute it under certain conditions; type"
-        print "'" + sys.argv[0] + " -c' for details."
-        print ""
+        print ("""\
+
+Haplofinder version 1.2, Copyright (C) 2001,2016 Roslin Institute, Andy Law
+
+Haplofinder comes with ABSOLUTELY NO WARRANTY; for details type:
+  '%s -w'.
+
+This is free software, and you are welcome to redistribute it under certain
+conditions; for details type:
+  '%s -c'
+
+""" % (sys.argv[0], sys.argv[0]))
 
     @staticmethod
     def copyright():
-        print "			    COPYING"
-        print ""
-        print "You may copy and distribute the Program (or a work based on it, under "
-        print "Section 2 of the GPL) in object code or executable form under the terms of"
-        print "Sections 1 and 2 of the GPL provided that you also do one of the following:"
-        print ""
-        print "    a) Accompany it with the complete corresponding machine-readable"
-        print "    source code, which must be distributed under the terms of Sections"
-        print "    1 and 2 above on a medium customarily used for software interchange; or,"
-        print ""
-        print "    b) Accompany it with a written offer, valid for at least three"
-        print "    years, to give any third party, for a charge no more than your"
-        print "    cost of physically performing source distribution, a complete"
-        print "    machine-readable copy of the corresponding source code, to be"
-        print "    distributed under the terms of Sections 1 and 2  on a medium"
-        print "    customarily used for software interchange; or,"
-        print ""
-        print "    c) Accompany it with the information you received as to the offer"
-        print "    to distribute corresponding source code.  (This alternative is"
-        print "    allowed only for noncommercial distribution and only if you"
-        print "    received the program in object code or executable form with such"
-        print "    an offer, in accord with Subsection b above.)	"
-        print ""
-        print "The above is an excerpt of the full GPL license which you should have"
-        print "received with this program. Please refer to the full document for"
-        print "more details"
+        print ("""\
+
+COPYING
+-------
+You may copy and distribute the Program (or a work based on it, under 
+Section 2 of the GPL) in object code or executable form under the terms of
+Sections 1 and 2 of the GPL provided that you also do one of the following:
+
+    a) Accompany it with the complete corresponding machine-readable
+    source code, which must be distributed under the terms of Sections
+    1 and 2 above on a medium customarily used for software interchange; or,
+
+    b) Accompany it with a written offer, valid for at least three
+    years, to give any third party, for a charge no more than your
+    cost of physically performing source distribution, a complete
+    machine-readable copy of the corresponding source code, to be
+    distributed under the terms of Sections 1 and 2  on a medium
+    customarily used for software interchange; or,
+
+    c) Accompany it with the information you received as to the offer
+    to distribute corresponding source code.  (This alternative is
+    allowed only for noncommercial distribution and only if you
+    received the program in object code or executable form with such
+    an offer, in accord with Subsection b above.)    
+
+The above is an excerpt of the full GPL license which you should have
+received with this program. Please refer to the full document for
+more details.""")
 
     @staticmethod
     def warranty():
-        print "			    NO WARRANTY"
-        print ""
-        print "  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY"
-        print "FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN"
-        print "OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES"
-        print "PROVIDE THE PROGRAM \"AS IS\" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED"
-        print "OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF"
-        print "MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS"
-        print "TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE"
-        print "PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,"
-        print "REPAIR OR CORRECTION."
-        print ""
-        print "  12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING"
-        print "WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR"
-        print "REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,"
-        print "INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING"
-        print "OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED"
-        print "TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY"
-        print "YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER"
-        print "PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE"
-        print "POSSIBILITY OF SUCH DAMAGES."
-        print ""
-        print "The above is an excerpt of the full GPL license which you should have"
-        print "received with this program. Please refer to the full document for"
-        print "more details"
+        print ("""\
+
+NO WARRANTY
+-----------
+  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE LAW.  EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
+OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS
+TO THE QUALITY AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE
+PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
+REPAIR OR CORRECTION.
+
+  12. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES,
+INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING
+OUT OF THE USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED
+TO LOSS OF DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY
+YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
+PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGES.
+
+The above is an excerpt of the full GPL license which you should have
+received with this program. Please refer to the full document for
+more details""")
 
 
 if __name__ == '__main__':
