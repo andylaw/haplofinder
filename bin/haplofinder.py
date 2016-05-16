@@ -436,7 +436,7 @@ class HaploFinder:
 
             self.options[flag] = value
 
-        if 'offset' not in self.options.has_key:
+        if 'offset' not in self.options:
             self.options["offset"] = 0
 
         self.options["offset"] = int(self.options["offset"])
