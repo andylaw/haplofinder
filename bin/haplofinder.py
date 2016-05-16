@@ -81,16 +81,16 @@ MAX_CLIP_START = 20
 #
 # Constructor just creates an object with a set of empty structures
 
-class FASTA_File:
+class FastaFile:
     # ----------------
     # In the constructor, we initialise the sequenceArray and indices and store the
     # filename
 
     def __init__(self, filename):
 
-        self.SequenceArray = []
-        self.nextSeqIndex = 0
-        self.filename = filename
+        self._sequence_array = []
+        self._next_sequence_index = 0
+        self._filename = filename
 
     # ----------------
     # In the read_file routine, we open the file (which we assume to be an aligned FASTA-
@@ -104,45 +104,44 @@ class FASTA_File:
         # go. Split the file on \r then rejoin using \n , then split on \n\n and rejoin
         # using \n so that we get all lines delimited with a single newline character
 
-        input = open(self.filename, 'r')
-        if input:
-            filecontents = input.read()
-            string.joinfields(string.splitfields(filecontents, "\r"), "\n")
-            string.joinfields(string.splitfields(filecontents, "\n\n"), "\n")
+        input_file = open(self._filename, 'r')
+        if input_file:
+            file_contents = input_file.read()
+            string.joinfields(string.splitfields(file_contents, "\r"), "\n")
+            string.joinfields(string.splitfields(file_contents, "\n\n"), "\n")
 
             # Split the file on '>' and throw away the first record (the blank space before
             # the first '>'). We now have an array of sequence records
-            records = (string.splitfields(filecontents, ">"))[1:]
+            records = (string.splitfields(file_contents, ">"))[1:]
 
             # Create a regular expression object to look for quoted names in the file
-            myRe = re.compile("^\s*\"([^\"]+)\"")
+            my_regex = re.compile("^\s*\"([^\"]+)\"")
 
             # For each sequence in turn, split the record into lines (on '\n'), and split
             # the first line, keeping the first entry as the title. Then join all the other
             # lines back up as the sequence element. Create a new sequence object using these
             # details and stick it in the list of known sequences
 
-            for thisRec in records:
-                lines = string.splitfields(thisRec, "\n")
+            for this_record in records:
+                lines = string.splitfields(this_record, "\n")
                 title = lines[0]
-                myMatchObject = myRe.search(title)
-                if (myMatchObject == None):
+                my_match_object = my_regex.search(title)
+                if my_match_object is None:
                     title = (string.split(lines[0]))[0]
                 else:
-                    title = myMatchObject.group(1)
+                    title = my_match_object.group(1)
                 sequence = string.joinfields(lines[1:], "")
 
-                newSeq = Sequence(title, sequence)
+                new_seq = Sequence(title, sequence)
 
-                self.add_sequence(newSeq)
+                self.add_sequence(new_seq)
 
             # Close the file afterwards
-            input.close
+            input_file.close()
 
         else:
             print "Cannot read the file '" + self.filename + "'"
             sys.exit(1)
-
 
         # ----------------
         #
@@ -151,12 +150,12 @@ class FASTA_File:
 
     def get_next_sequence(self):
 
-        if (self.nextSeqIndex >= len(self.SequenceArray)):
+        if self._next_sequence_index >= len(self._sequence_array):
             return None
         else:
-            nextSeq = self.SequenceArray[self.nextSeqIndex]
-            self.nextSeqIndex = self.nextSeqIndex + 1
-            return nextSeq
+            next_seq = self._sequence_array[self._next_sequence_index]
+            self._next_sequence_index += 1
+            return next_seq
 
         # ----------------
         #
@@ -165,19 +164,19 @@ class FASTA_File:
         #
 
     def add_sequence(self, sequence):
-        self.SequenceArray.append(sequence)
+        self._sequence_array.append(sequence)
 
     # ----------------
     #
     # Write the contents of the sequence array out to the file
     #
     def write_file(self):
-        output = open(self.filename, 'w')
-        if output:
-            for eachSequence in self.SequenceArray:
-                output.write(">\"" + eachSequence.title + "\"\n")
-                output.write(eachSequence.sequence + "\n")
-            output.close
+        output_file = open(self.filename, 'w')
+        if output_file:
+            for each_sequence in self._sequence_array:
+                output_file.write(">\"" + each_sequence.title + "\"\n")
+                output_file.write(each_sequence.sequence + "\n")
+            output_file.close()
 
 
 # --------------------------------------------------------------------------------
@@ -189,16 +188,13 @@ class HaplotypeDetector:
 
     def __init__(self, filename, offset):
 
-        #		print "Offset is " + str(offset)
-
-
         # Initialise the storage structures and store the filename
 
-        self.HaplotypeArray = []
-        self.HaplotypeHash = {}
+        self._haplotype_list = []
+        self._haplotype_dict = {}
 
-        self.CombinationArray = []
-        self.filename = filename
+        self._combination_list = []
+        self._filename = filename
 
         # Look for a pre-computed file of haplotypes (filename + ".haplos")
         # If one exists, and has been modified later then the input filename then
@@ -206,47 +202,45 @@ class HaplotypeDetector:
 
         using_haplo_file = 0
 
-        if (os.path.exists(self.filename + ".haplos")):
-            realfilestat = os.stat(self.filename)[8]
-            haplofilestat = os.stat(self.filename + ".haplos")[8]
-            if (haplofilestat > realfilestat):
-                self.filename = self.filename + ".haplos"
-                print "Reading pre-computed haplotype combinations from '" + self.filename + "'"
+        if os.path.exists(self._filename + ".haplos"):
+            real_file_stat = os.stat(self._filename)[8]
+            haplotype_file_stat = os.stat(self._filename + ".haplos")[8]
+            if haplotype_file_stat > real_file_stat:
+                self.filename += ".haplos"
+                print "Reading pre-computed haplotype combinations from '" + self._filename + "'"
                 using_haplo_file = 1
-
-
 
             # Read the fasta file and get each sequence in turn. Store them in the Haplotype Array
             # and hash, having stripped off any leading stuff if required
 
-        fastaFile = FASTA_File(self.filename)
-        if (fastaFile):
-            fastaFile.read_file()
-            while (1):
-                newSeq = fastaFile.get_next_sequence()
-                if newSeq == None:
+        fasta_file = FASTA_File(self._filename)
+        if fasta_file:
+            fasta_file.read_file()
+            while True:
+                new_seq = fasta_file.get_next_sequence()
+                if new_seq is None:
                     break
-                if self.HaplotypeHash.has_key(newSeq.title):
-                    print "Sequence '" + newSeq.title + "' already exists"
+                if new_seq.title in self._haplotype_dict:
+                    print "Sequence '" + new_seq.title + "' already exists"
                     sys.exit(1)
 
-                if (offset > 0):
-                    newSeq = newSeq[offset:]
-                self.HaplotypeHash[newSeq.title] = newSeq
-                self.HaplotypeArray.append(newSeq)
+                if offset > 0:
+                    new_seq = new_seq[offset:]
+                self._haplotype_dict[new_seq.title] = new_seq
+                self._haplotype_list.append(new_seq)
 
         else:
             print "Cannot read the file '" + filename + "'"
             sys.exit(1)
 
-        if (not using_haplo_file):
-            print "There are " + str(len(self.HaplotypeArray)) + " original sequences"
+        if not using_haplo_file:
+            print "There are " + str(len(self._haplotype_list)) + " original sequences"
             self.build_combinations()
         else:
-            self.CombinationArray = self.HaplotypeArray
+            self._combination_list = self._haplotype_list
 
-        print "Length of a sequence is " + str(len(self.CombinationArray[0].sequence))
-        print "There are " + str(len(self.CombinationArray)) + " combinations"
+        print "Length of a sequence is " + str(len(self._combination_list[0].sequence))
+        print "There are " + str(len(self._combination_list)) + " combinations"
 
     # --------------------------------------------------------------------------------
     #
@@ -255,25 +249,25 @@ class HaplotypeDetector:
 
     def build_combinations(self):
         print "Building combinations of known haplotypes"
-        self.CombinationArray = self.HaplotypeArray
-        originalCount = len(self.CombinationArray)
+        self._combination_list = self._haplotype_list
+        original_count = len(self._combination_list)
 
         # Once we have all the sequences, add them to each other to give the possible
         # combinations. Add them to the Array as well.
 
-        for i in range(0, originalCount - 1):
-            for j in range(i + 1, originalCount):
-                newSeq = self.CombinationArray[i] + self.CombinationArray[j]
-                self.CombinationArray.append(newSeq)
+        for i in range(0, original_count - 1):
+            for j in range(i + 1, original_count):
+                new_seq = self._combination_list[i] + self._combination_list[j]
+                self._combination_list.append(new_seq)
                 sys.stdout.write(".")
                 sys.stdout.flush()
         print
-        print "We have " + str(len(self.CombinationArray)) + " combinations to compare"
-        fastaFile = FASTA_File(self.filename + ".haplos")
+        print "We have " + str(len(self._combination_list)) + " combinations to compare"
+        fasta_file = FASTA_File(self.filename + ".haplos")
 
-        for eachSeq in self.CombinationArray:
-            fastaFile.add_sequence(eachSeq)
-        fastaFile.write_file()
+        for each_seq in self._combination_list:
+            fasta_file.add_sequence(each_seq)
+        fasta_file.write_file()
 
     # --------------------------------------------------------------------------------
     #
@@ -283,22 +277,22 @@ class HaplotypeDetector:
         print
         print "Analysing '" + sequence.title + "'"
         print "Start of sequence is  '" + sequence.sequence[:20] + "'"
-        print "Start of reference is '" + self.HaplotypeArray[0].sequence[:20] + "'"
+        print "Start of reference is '" + self._haplotype_list[0].sequence[:20] + "'"
 
-        gotMatch = 0
-        clipStart = 0
+        got_match = 0
+        clip_start = 0
         clipped = ''
-        while ((gotMatch == 0) and (clipStart <= MAX_CLIP_START)):
-            if (clipped <> ''):
+        while (got_match == 0) and (clip_start <= MAX_CLIP_START):
+            if clipped != '':
                 print clipped
-            for combSeq in self.CombinationArray:
-                if sequence[clipStart:] == combSeq[clipStart:]:
-                    gotMatch = 1
-                    print "Seems to match '" + combSeq.title + "' " + clipped
-            clipStart = clipStart + 1
-            clipped = "(clipping %d bases from the start)" % (clipStart)
+            for comb_seq in self._combination_list:
+                if sequence[clip_start:] == comb_seq[clip_start:]:
+                    got_match = 1
+                    print "Seems to match '" + comb_seq.title + "' " + clipped
+            clip_start += 1
+            clipped = "(clipping %d bases from the start)" % clip_start
 
-        if (not gotMatch):
+        if not got_match:
             print "Nothing matched! (even after clipping %d bases from the start" % MAX_CLIP_START
 
 
@@ -309,49 +303,49 @@ class IUPAC:
 
         self.list_by_symbol = {}
         self.list_by_score = {}
-        self.nextBit = 1
+        self._next_bit = 1
 
-        self.seed('A');
-        self.seed('C');
-        self.seed('G');
-        self.seed('T');
+        self.seed('A')
+        self.seed('C')
+        self.seed('G')
+        self.seed('T')
 
-        self.add('R', self.get_bit_score(['A', 'G']));
-        self.add('Y', self.get_bit_score(['T', 'C']));
+        self.add('R', self.get_bit_score(['A', 'G']))
+        self.add('Y', self.get_bit_score(['T', 'C']))
 
-        self.add('M', self.get_bit_score(['A', 'C']));
-        self.add('K', self.get_bit_score(['G', 'T']));
+        self.add('M', self.get_bit_score(['A', 'C']))
+        self.add('K', self.get_bit_score(['G', 'T']))
 
-        self.add('S', self.get_bit_score(['G', 'C']));
-        self.add('W', self.get_bit_score(['A', 'T']));
+        self.add('S', self.get_bit_score(['G', 'C']))
+        self.add('W', self.get_bit_score(['A', 'T']))
 
-        self.add('B', self.get_bit_score(['C', 'G', 'T']));
-        self.add('D', self.get_bit_score(['A', 'G', 'T']));
-        self.add('H', self.get_bit_score(['A', 'C', 'T']));
-        self.add('V', self.get_bit_score(['A', 'C', 'G']));
+        self.add('B', self.get_bit_score(['C', 'G', 'T']))
+        self.add('D', self.get_bit_score(['A', 'G', 'T']))
+        self.add('H', self.get_bit_score(['A', 'C', 'T']))
+        self.add('V', self.get_bit_score(['A', 'C', 'G']))
 
-        self.add('N', self.get_bit_score(['A', 'C', 'G', 'T']));
+        self.add('N', self.get_bit_score(['A', 'C', 'G', 'T']))
 
     def seed(self, label):
-        score = self.nextBit
-        self.nextBit = self.nextBit * 2
+        score = self._next_bit
+        self._next_bit *= 2
         self.add(label, score)
 
     def add(self, label, score):
         self.list_by_symbol[label] = score
         self.list_by_score[score] = label
 
-    def get_bit_score(self, list):
+    def get_bit_score(self, base_list):
         score = 0
-        for base in list:
+        for base in base_list:
             score = score | self.list_by_symbol[base]
         return score
 
-    def get_merged_code(self, list):
-        if '-' in list:
+    def get_merged_code(self, base_list):
+        if '-' in base_list:
             return '-'
         else:
-            return self.list_by_score[self.get_bit_score(list)]
+            return self.list_by_score[self.get_bit_score(base_list)]
 
 
 # --------------------------------------------------------------------------------
@@ -360,38 +354,38 @@ class Sequence:
     classIUPAC = IUPAC()
 
     def __init__(self, title, sequence):
-        #		self.IUPAC = IUPAC()
+        # self.IUPAC = IUPAC()
         self.title = title
         self.sequence = string.upper(sequence)
         self.parents = []
 
     def __add__(self, other):
         if len(self.sequence) != len(other.sequence):
-            raise "Can't add 2 sequences of differing length"
+            raise Exception("Can't add 2 sequences of differing length")
 
         newseq = ''
         for i in range(0, len(self.sequence)):
             newseq = newseq + self.classIUPAC.get_merged_code([self.sequence[i:i + 1], other.sequence[i:i + 1]])
 
-        SeqObj = Sequence(self.title + " + " + other.title, newseq)
-        SeqObj.add_parents([self, other])
-        return SeqObj
+        sequence_object = Sequence(self.title + " + " + other.title, newseq)
+        sequence_object.add_parents([self, other])
+        return sequence_object
 
     def __getslice__(self, i, j):
         new = copy.copy(self)
         new.sequence = new.sequence[i:j]
         return new
 
-    def __cmp__(self, cmp):
-        if cmp == None:
+    def __cmp__(self, other):
+        if other is None:
             return 1
-        cmplen = min(self.length(), cmp.length())
+        cmplen = min(self.length(), other.length())
         seq1 = self.sequence[:cmplen]
         seq2 = cmp.sequence[:cmplen]
-        while ((seq1[:1] == '-') or (seq2[:1] == '-')):
+        while (seq1[:1] == '-') or (seq2[:1] == '-'):
             seq1 = seq1[1:]
             seq2 = seq2[1:]
-        while ((seq1[-1:] == '-') or (seq2[-1:] == '-')):
+        while (seq1[-1:] == '-') or (seq2[-1:] == '-'):
             seq1 = seq1[:-1]
             seq2 = seq2[:-1]
         if seq1 == seq2:
@@ -413,8 +407,9 @@ class HaploFinder:
         #
         try:
             optlist, self.remains = getopt.getopt(sys.argv[1:], 'a:o:cw', ['alignfile=', 'offset='])
-        except:
+        except getopt.GetoptError as err:
             print "There was a problem with the command line arguments - exiting"
+            print str(err)
             sys.exit(1)
 
         #
@@ -431,36 +426,37 @@ class HaploFinder:
             while flag[0] == '-':
                 flag = flag[1:]
 
-            if short_to_long.has_key(flag):
+            if flag in short_to_long:
                 flag = short_to_long[flag]
 
-            if self.options.has_key(flag):
-                errorString = "Too many instances of the '" + flag + "' argument"
-                raise Exception(errorString)
+            if flag in self.options:
+                error_string = "Too many instances of the '" + flag + "' argument"
+                raise Exception(error_string)
 
             self.options[flag] = value
 
-        if (not self.options.has_key("offset")):
+        if 'offset' not in self.options.has_key:
             self.options["offset"] = 0
 
         self.options["offset"] = int(self.options["offset"])
 
-        exitNeeded = 0
-        if (self.options.has_key("c")):
-            self.copyright()
-            exitNeeded = 1
-        if (self.options.has_key("w")):
-            self.warranty()
-            exitNeeded = 1
-        if (exitNeeded == 1):
+        exit_needed = 0
+        if 'c' in self.options:
+            HaploFinder.copyright()
+            exit_needed = 1
+        if 'w' in self.options:
+            HaploFinder.warranty()
+            exit_needed = 1
+        if exit_needed == 1:
             sys.exit(0)
 
         # flag the conditions and report any other requested information
-        self.startDetails()
-        if ((not self.options.has_key("alignfile")) or (len(self.remains) == 0)):
-            self.help()
+        HaploFinder.start_details()
+        if ('alignfile' not in self.options) or (len(self.remains) == 0):
+            HaploFinder.help()
 
-    def help(self):
+    @staticmethod
+    def help():
         print "Usage: " + sys.argv[0] + " -a|--alignfile <alignmentfile>"
         print "            [-o|-offset <offset>] file1 [file2 ...]"
         print ""
@@ -478,25 +474,26 @@ class HaploFinder:
         print "                    sequence files to be analysed"
         sys.exit(0)
 
-    def runIt(self):
+    def run(self):
 
         # Build the haplotype detector by reading in the file
 
         hd = HaplotypeDetector(self.options['alignfile'], self.options['offset'])
 
-        for file in self.remains:
-            fastaFile = FASTA_File(file)
-            fastaFile.read_file()
+        for input_file in self.remains:
+            fasta_file = FASTA_File(input_file)
+            fasta_file.read_file()
 
-            while (1):
-                seq = fastaFile.get_next_sequence()
-                if (seq == None):
+            while True:
+                seq = fasta_file.get_next_sequence()
+                if seq is None:
                     break
                 if self.options["offset"] < 0:
                     seq = seq[(self.options["offset"] * -1):]
                 hd.find_match(seq)
 
-    def startDetails(self):
+    @staticmethod
+    def start_details():
         print ""
         print "Haplofinder version 1.2, Copyright (C) 2001,2016 Roslin Institute, Andy Law"
         print "Haplofinder comes with ABSOLUTELY NO WARRANTY; for details type"
@@ -505,7 +502,8 @@ class HaploFinder:
         print "'" + sys.argv[0] + " -c' for details."
         print ""
 
-    def copyright(self):
+    @staticmethod
+    def copyright():
         print "			    COPYING"
         print ""
         print "You may copy and distribute the Program (or a work based on it, under "
@@ -533,7 +531,8 @@ class HaploFinder:
         print "received with this program. Please refer to the full document for"
         print "more details"
 
-    def warranty(self):
+    @staticmethod
+    def warranty():
         print "			    NO WARRANTY"
         print ""
         print "  11. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY"
@@ -562,4 +561,4 @@ class HaploFinder:
 
 
 if __name__ == '__main__':
-    HaploFinder().runIt()
+    HaploFinder().run()
