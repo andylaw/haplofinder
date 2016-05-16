@@ -128,12 +128,5 @@ sequence to align properly with the references and the underlying pair of
 haplotypes can be identified.
 
 
-As one further note, the sequences compared are checked to the fullest extent
-that the combination of reference and test sequence allow. If the reference
-sequence is shorter than the test sequence or vice-versa, each will only be
-compared across the region that overlaps. For some haplotypes, this will result
-in more than one possible pair of alleles being reported.
-
-
 
 
