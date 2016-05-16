@@ -140,13 +140,13 @@ class FastaFile:
             input_file.close()
 
         else:
-            print "Cannot read the file '" + self.filename + "'"
+            print "Cannot read the file '" + self._filename + "'"
             sys.exit(1)
 
-        # ----------------
-        #
-        # Return the next unread sequence from the list read in by the read_file routine
-        #
+            # ----------------
+            #
+            # Return the next unread sequence from the list read in by the read_file routine
+            #
 
     def get_next_sequence(self):
 
@@ -157,11 +157,11 @@ class FastaFile:
             self._next_sequence_index += 1
             return next_seq
 
-        # ----------------
-        #
-        # Add a new sequence to the list of sequences. Sequence is assumed to be a sequence
-        # object
-        #
+            # ----------------
+            #
+            # Add a new sequence to the list of sequences. Sequence is assumed to be a sequence
+            # object
+            #
 
     def add_sequence(self, sequence):
         self._sequence_array.append(sequence)
@@ -171,7 +171,7 @@ class FastaFile:
     # Write the contents of the sequence array out to the file
     #
     def write_file(self):
-        output_file = open(self.filename, 'w')
+        output_file = open(self._filename, 'w')
         if output_file:
             for each_sequence in self._sequence_array:
                 output_file.write(">\"" + each_sequence.title + "\"\n")
@@ -206,14 +206,14 @@ class HaplotypeDetector:
             real_file_stat = os.stat(self._filename)[8]
             haplotype_file_stat = os.stat(self._filename + ".haplos")[8]
             if haplotype_file_stat > real_file_stat:
-                self.filename += ".haplos"
+                self._filename += ".haplos"
                 print "Reading pre-computed haplotype combinations from '" + self._filename + "'"
                 using_haplo_file = 1
 
-            # Read the fasta file and get each sequence in turn. Store them in the Haplotype Array
-            # and hash, having stripped off any leading stuff if required
+                # Read the fasta file and get each sequence in turn. Store them in the Haplotype Array
+                # and hash, having stripped off any leading stuff if required
 
-        fasta_file = FASTA_File(self._filename)
+        fasta_file = FastaFile(self._filename)
         if fasta_file:
             fasta_file.read_file()
             while True:
@@ -263,7 +263,7 @@ class HaplotypeDetector:
                 sys.stdout.flush()
         print
         print "We have " + str(len(self._combination_list)) + " combinations to compare"
-        fasta_file = FASTA_File(self.filename + ".haplos")
+        fasta_file = FastaFile(self._filename + ".haplos")
 
         for each_seq in self._combination_list:
             fasta_file.add_sequence(each_seq)
@@ -351,10 +351,11 @@ class IUPAC:
 # --------------------------------------------------------------------------------
 
 class Sequence:
+    # Class-based IUPAC object. This is just used as a translator so we don't need separate instances
+    # for each Sequence object.
     classIUPAC = IUPAC()
 
     def __init__(self, title, sequence):
-        # self.IUPAC = IUPAC()
         self.title = title
         self.sequence = string.upper(sequence)
         self.parents = []
@@ -381,7 +382,7 @@ class Sequence:
             return 1
         cmplen = min(self.length(), other.length())
         seq1 = self.sequence[:cmplen]
-        seq2 = cmp.sequence[:cmplen]
+        seq2 = other.sequence[:cmplen]
         while (seq1[:1] == '-') or (seq2[:1] == '-'):
             seq1 = seq1[1:]
             seq2 = seq2[1:]
@@ -481,7 +482,7 @@ class HaploFinder:
         hd = HaplotypeDetector(self.options['alignfile'], self.options['offset'])
 
         for input_file in self.remains:
-            fasta_file = FASTA_File(input_file)
+            fasta_file = FastaFile(input_file)
             fasta_file.read_file()
 
             while True:
