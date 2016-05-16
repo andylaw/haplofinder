@@ -88,6 +88,9 @@ file-5.seq       (e25f645b5761df28207302931276a90c)
 
 offsets.seq      (03439c2ff6e3689b3d7bea8d47801722)
 
+truncated.seq    (1daa3a6a8f8463a83bc2570e97f574bd)
+
+
 
 The DRB3Ex2DNA.fas file contains the aligned reference sequences. Each is
 padded with dash characters so that all sequences have the same overall length
@@ -126,6 +129,22 @@ command but this time with an offset of 19 which is the number of dashes/bases
 that have neen trimmed from the start of the sequence. This should allow the
 sequence to align properly with the references and the underlying pair of
 haplotypes can be identified.
+
+
+As one further note, the sequences compared are checked to the fullest extent
+that the combination of reference and test sequence allow. If the reference
+sequence is shorter than the test sequence or vice-versa, each will only be
+compared across the region that overlaps. For some haplotypes, this will result
+in more than one possible pair of alleles being reported.
+
+To illustrate this, we provide the sequence called 'truncated.seq'. This contains an ambiguous, short haplotype which matches multiple possible combinations of haplotypes in the reference file. Because the differences between the haplotype pairs lie in the region of sequence not represented in the supplied sequence, the code is unable to distinguish between the possibilities and thus reports them all.
+
+Try running:
+
+> python bin/haplofinder.py -a examples/DRB3Ex2DNA.fas examples/truncated.seq
+
+... to see the result.
+
 
 
 
